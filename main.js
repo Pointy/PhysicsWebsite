@@ -10,14 +10,17 @@ var friction = 0.05;
 var boxSize = 20;
 var springLength = 100;
 
+var tempBoxSize = boxSize;
+
 var gravityActivated = true;
 var springDrawingActivated = true;
 var pointDrawingActivated = true;
 
+var middleMouseDown = false;
+
 var points = [];
 var springs = [];
 
-var mouseDown = [0, 0, 0];
 var lastMouseDown = [0, 0, 0];
 var draggedExists = false;
 
@@ -25,30 +28,37 @@ var draggedExists = false;
 // Main function, called on document load.
 var main = function () {
 
-    document.onkeydown = function (e) {
-        if (e.which == 32) { // spacebar
+    document.onkeydown = function (evt) {
+        if (evt.which == 32) { // spacebar
             gravityActivated = !gravityActivated;
         }
-        else if (e.which == 83) { // s key
+        else if (evt.which == 83) { // s key
             springDrawingActivated = !springDrawingActivated;
         }
-        else if (e.which == 80) { // p key
+        else if (evt.which == 80) { // p key
+            if (pointDrawingActivated) {
+                
+                tempBoxSize = boxSize;
+                boxSize = 1;
+            }
+            else {
+                boxSize = tempBoxSize;
+            }
             pointDrawingActivated = !pointDrawingActivated;
+        }
+        else if (evt.which == 46) { // delete key
+            points = [];
+            springs = [];
         }
     }
 
-    points.push(new MassPoint(100, 100));
-    points.push(new MassPoint(200, 200));
-    points.push(new MassPoint(50, 150));
-
-    springs.push(new Spring(points[0], points[1]));
-    springs.push(new Spring(points[1], points[2]));
-    springs.push(new Spring(points[2], points[0]));
-
     document.body.onmousedown = function (evt) {
-        ++mouseDown[evt.button];
-        if (mouseDown[evt.button] > 1) {
-            mouseDown[evt.button] = 0;
+        if (evt.button == 2) {
+            SelectPoints();
+            console.log(100);
+        }
+        if (evt.button == 1) {
+            middleMouseDown = true;
         }
         if (evt.button == 0) {
             CreatePoint();
@@ -56,13 +66,15 @@ var main = function () {
     }
 
     document.body.onmouseup = function (evt) {
-        --mouseDown[evt.button];
-        if (mouseDown[evt.button] < 0) {
-            mouseDown[evt.button] = 0;
+        if (evt.button == 1) {
+            middleMouseDown = false;
         }
     }
 
-    document.onmousemove = captureMouse;
+    document.onmousemove = function (evt) {
+        mouseX = evt.clientX;
+        mouseY = evt.clientY;
+    }
     setInterval(doFrame, 5);
 }
 
@@ -103,7 +115,6 @@ var update = function () {
         springs[i].update();
     }
     
-    SelectPoints();
     ConnectPoints();
     DragPoints();
 }
@@ -115,16 +126,10 @@ var doFrame = function () {
     update();
 }
 
-// Captures the mouse position when the mouse cursor is moved.
-var captureMouse = function (e) {
-    mouseX = e.clientX;
-    mouseY = e.clientY;
-}
-
 // Drags points using the middle mouse button.
 var DragPoints = function () {
     for (var i = 0; i < points.length; i++) {
-        if (mouseDown[1]) {
+        if (middleMouseDown) {
             if (new Vector(mouseX, mouseY).subtract(points[i].position).length() < 20) {
                 if (!points[i].isDragged && !draggedExists) {
                     points[i].isDragged = true;
@@ -162,9 +167,7 @@ var CreatePoint = function () {
 var SelectPoints = function () {
     for (var i = 0; i < points.length; i++) {
         if (new Vector(mouseX, mouseY).subtract(points[i].position).length() < 20) {
-            if (mouseDown[2] && !lastMouseDown[2]) {
-                points[i].isSelected = true;
-            }
+            points[i].isSelected = true;
         }
     }
 }
@@ -271,14 +274,14 @@ var MassPoint = function (posX, posY) {
 
     // handles collision of the masspoint with the sides of the window.
     this.collideWithWalls = function () {
-        if (this.position.x < 0) { // if too far left.
-            this.position.x = 0;
+        if (this.position.x < boxSize / 2) { // if too far left.
+            this.position.x = boxSize / 2;
             this.velocity.x = Math.abs(this.velocity.x) * (1 - bounceResistance);
             this.velocity.y *= 1 - friction;
         }
 
-        if (this.position.y < 0) { // if too far up.
-            this.position.y = 0;
+        if (this.position.y < boxSize / 2) { // if too far up.
+            this.position.y = boxSize / 2;
             this.velocity.y = Math.abs(this.velocity.y) * (1 - bounceResistance);
             this.velocity.x *= 1 - friction;
         }
