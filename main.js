@@ -7,27 +7,23 @@ var gravity = 0.04;
 var airResistance = 0.01;
 var bounceResistance = 0.5;
 var friction = 0.05;
-var boxSize = 20;
+var boxSize = 10;
 var springLength = 100;
-
 var tempBoxSize = boxSize;
 
 var gravityActivated = true;
 var springDrawingActivated = true;
 var pointDrawingActivated = true;
-
 var middleMouseDown = false;
+var draggedExists = false;
 
 var points = [];
 var springs = [];
 
-var lastMouseDown = [0, 0, 0];
-var draggedExists = false;
 
 
 // Main function, called on document load.
-var main = function () {
-
+function main() {
     document.onkeydown = function (evt) {
         if (evt.which == 32) { // spacebar
             gravityActivated = !gravityActivated;
@@ -54,14 +50,14 @@ var main = function () {
 
     document.body.onmousedown = function (evt) {
         if (evt.button == 2) {
-            SelectPoints();
+            selectPoints();
             console.log(100);
         }
         if (evt.button == 1) {
             middleMouseDown = true;
         }
         if (evt.button == 0) {
-            CreatePoint();
+            createPoint();
         }
     }
 
@@ -79,7 +75,7 @@ var main = function () {
 }
 
 // Draws the scene.
-var draw = function () {
+function draw() {
     var c = document.getElementById("myCanvas");
     var ctx = c.getContext("2d");
     
@@ -93,7 +89,7 @@ var draw = function () {
 }
 
 // Set up canvas, resize it to fit the screen and clear every frame.
-var setUpCanvas = function () {
+function setUpCanvas() {
     var c = document.getElementById("myCanvas");
 
     var ctx = c.getContext("2d");
@@ -106,7 +102,7 @@ var setUpCanvas = function () {
 }
 
 // Updates the scene.
-var update = function () {
+function update() {
     for (var i = 0; i < points.length; i++) {
         points[i].update();
     }
@@ -115,19 +111,19 @@ var update = function () {
         springs[i].update();
     }
     
-    ConnectPoints();
-    DragPoints();
+    connectPoints();
+    dragPoints();
 }
 
 // Called every frame, updates and draws the scene.
-var doFrame = function () {
+function doFrame() {
     setUpCanvas();
     draw();
     update();
 }
 
 // Drags points using the middle mouse button.
-var DragPoints = function () {
+function dragPoints() {
     for (var i = 0; i < points.length; i++) {
         if (middleMouseDown) {
             if (new Vector(mouseX, mouseY).subtract(points[i].position).length() < 20) {
@@ -159,12 +155,12 @@ var DragPoints = function () {
 }
 
 // Creates a mass point with the mouse position.
-var CreatePoint = function () {
+function createPoint() {
     points.push(new MassPoint(mouseX, mouseY));
 }
 
 // Selects points that are next to the mouse cursor when you right click.
-var SelectPoints = function () {
+function selectPoints() {
     for (var i = 0; i < points.length; i++) {
         if (new Vector(mouseX, mouseY).subtract(points[i].position).length() < 20) {
             points[i].isSelected = true;
@@ -173,7 +169,7 @@ var SelectPoints = function () {
 }
 
 // checks whether or not the spring exists.
-var SpringExists = function (otherSpring) {
+function springExists(otherSpring) {
     for (var i = 0; i < springs.length; i++) {
         if (springs[i].equals(otherSpring)) {
             return true;
@@ -183,14 +179,14 @@ var SpringExists = function (otherSpring) {
 }
 
 // Connects all points that are selected with springs.
-var ConnectPoints = function () {
+function connectPoints() {
     var atLeastTwoSelected = false;
     for (var i = 0; i < points.length; i++) {
         for (var j = i + 1; j < points.length; j++) {
             if (points[i].isSelected && points[j].isSelected) {
                 atLeastTwoSelected = true;
                 var newSpring = new Spring(points[i], points[j])
-                if (!SpringExists(newSpring)) {
+                if (!springExists(newSpring)) {
                     springs.push(newSpring);
                 }
             }
@@ -205,7 +201,7 @@ var ConnectPoints = function () {
 }
 
 // Spring object, used for attracting points to eachother.
-var Spring = function (firstPoint, secondPoint) {
+function Spring(firstPoint, secondPoint) {
     this.first = firstPoint;
     this.second = secondPoint;
 
@@ -241,7 +237,7 @@ var Spring = function (firstPoint, secondPoint) {
 }
 
 // MassPoint object, for storing and operating on points in 2d space.
-var MassPoint = function (posX, posY) {
+function MassPoint(posX, posY) {
     this.position = new Vector(posX, posY);
     this.velocity = new Vector(0, 0);
     this.isDragged = false;
@@ -268,7 +264,6 @@ var MassPoint = function (posX, posY) {
             ctx.beginPath();
             ctx.arc(this.position.x, this.position.y, boxSize / 2 - 1, 0, 2 * Math.PI, false);
             ctx.fill();
-            ctx.stroke();
         }
     }
 
@@ -301,7 +296,7 @@ var MassPoint = function (posX, posY) {
 }
 
 // Vector object for storing and operating on two-dimensional vectors.
-var Vector = function (x, y) {
+function Vector(x, y) {
     this.x = x;
     this.y = y;
 
