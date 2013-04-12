@@ -10,6 +10,10 @@ var friction = 0.05;
 var boxSize = 20;
 var springLength = 100;
 
+var gravityActivated = true;
+var springDrawingActivated = true;
+var pointDrawingActivated = true;
+
 var points = [];
 var springs = [];
 
@@ -20,6 +24,19 @@ var draggedExists = false;
 
 // Main function, called on document load.
 var main = function () {
+
+    document.onkeydown = function (e) {
+        if (e.which == 32) { // spacebar
+            gravityActivated = !gravityActivated;
+        }
+        else if (e.which == 83) { // s key
+            springDrawingActivated = !springDrawingActivated;
+        }
+        else if (e.which == 80) { // p key
+            pointDrawingActivated = !pointDrawingActivated;
+        }
+    }
+
     points.push(new MassPoint(100, 100));
     points.push(new MassPoint(200, 200));
     points.push(new MassPoint(50, 150));
@@ -145,7 +162,7 @@ var CreatePoint = function () {
 var SelectPoints = function () {
     for (var i = 0; i < points.length; i++) {
         if (new Vector(mouseX, mouseY).subtract(points[i].position).length() < 20) {
-            if (mouseDown[2]) {
+            if (mouseDown[2] && !lastMouseDown[2]) {
                 points[i].isSelected = true;
             }
         }
@@ -209,12 +226,14 @@ var Spring = function (firstPoint, secondPoint) {
 
     // draws the spring.
     this.draw = function (ctx) {
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = 'black';
-        ctx.beginPath();
-        ctx.moveTo(this.first.position.x, this.first.position.y);
-        ctx.lineTo(this.second.position.x, this.second.position.y);
-        ctx.stroke();
+        if (springDrawingActivated) {
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = 'black';
+            ctx.beginPath();
+            ctx.moveTo(this.first.position.x, this.first.position.y);
+            ctx.lineTo(this.second.position.x, this.second.position.y);
+            ctx.stroke();
+        }
     }
 }
 
@@ -227,26 +246,27 @@ var MassPoint = function (posX, posY) {
 
     // updates the masspoint - moves it and changes the velocity.
     this.update = function () {
-        this.velocity = this.velocity.add(new Vector(0, gravity));
+        if (gravityActivated) {
+            this.velocity = this.velocity.add(new Vector(0, gravity));
+        }
         this.position = this.position.add(this.velocity);
         this.velocity = this.velocity.multiply(1 - airResistance);
         this.collideWithWalls();
     }
 
     this.draw = function (ctx) {
-
-        if (this.isSelected) {
-            ctx.fillStyle = 'green';
+        if (pointDrawingActivated) {
+            if (this.isSelected) {
+                ctx.fillStyle = 'green';
+            }
+            else {
+                ctx.fillStyle = 'black';
+            }
+            ctx.beginPath();
+            ctx.arc(this.position.x, this.position.y, boxSize / 2 - 1, 0, 2 * Math.PI, false);
+            ctx.fill();
+            ctx.stroke();
         }
-        else {
-            ctx.fillStyle = 'black';
-        }
-
-        ctx.beginPath();
-        ctx.arc(this.position.x, this.position.y, boxSize / 2 - 1, 0, 2 * Math.PI, false);
-        ctx.fill();
-
-        ctx.stroke();
     }
 
     // handles collision of the masspoint with the sides of the window.
@@ -303,7 +323,7 @@ var Vector = function (x, y) {
             return new Vector(this.x / this.length(), this.y / this.length());
         }
         else {
-            return new Vector(0, 0);
+            return new Vector(0.1, 0.1);
         }
     }
 }
