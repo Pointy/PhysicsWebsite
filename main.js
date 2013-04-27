@@ -24,14 +24,6 @@ var springs = [];
 
 // Main function, called on document load.
 function main() {
-    $('#lb_background').click(function () {
-        $('#lb_background, #lb_front').fadeOut(200);
-    });
-    
-    $('#lb_front').click(function () {
-        $('#lb_background, #lb_front').fadeOut(200);
-    });
-    
     $('#body').keydown(function (evt) {
         if (evt.which == 32) { // spacebar
             gravityActivated = !gravityActivated;
@@ -59,7 +51,7 @@ function main() {
         }
     });
     
-    $('#myCanvas').mousedown(function(evt) {
+    $('#body').mousedown(function (evt) {
         if (evt.button == 2) {
             selectPoints();
         }
@@ -99,23 +91,11 @@ function draw() {
 
 // Set up canvas, resize it to fit the screen and clear every frame.
 function setUpCanvas() {
-    
     var ctx = $('#myCanvas')[0].getContext('2d');
     windowWidth = window.innerWidth;
     windowHeight = window.innerHeight;
     ctx.canvas.width = windowWidth;
     ctx.canvas.height = windowHeight;
-    
-    ctx.fillStyle = '#C4C4C4'; // set canvas background color
-    ctx.fillRect(0, 0, windowWidth, windowHeight);
-    
-    /*
-    ctx.font = '20pt Century Gothic';
-    ctx.fillStyle = '#FFFFFF';
-    
-    void fillText("asd", 50, 50); 
-    */
-
 }
 
 // Updates the scene.
