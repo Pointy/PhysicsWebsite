@@ -4,7 +4,7 @@ var windowWidth = 0;
 var windowHeight = 0;
 
 var gravity = 0.04;
-var airResistance = 0.005;
+var airResistance = 0.01;
 var bounceResistance = 0.5;
 var friction = 0.2;
 var boxSize = 10;
@@ -24,25 +24,41 @@ var springs = [];
 
 // Main function, called on document load.
 function main() {
+    $('#lb_background').click(function () {
+        $('#lb_background, #lb_front').fadeOut(200);
+    });
+    
+    $('#lb_front').click(function () {
+        $('#lb_background, #lb_front').fadeOut(200);
+    });
+    
     $('#body').keydown(function (evt) {
         if (evt.which == 32) { // spacebar
             gravityActivated = !gravityActivated;
-        } else if (evt.which == 83) { // s key
+        }
+        else if (evt.which == 83) { // s key
             springDrawingActivated = !springDrawingActivated;
-        } else if (evt.which == 80) { // p key
+        }
+        else if (evt.which == 80) { // p key
             if (pointDrawingActivated) {
 
                 tempBoxSize = boxSize;
                 boxSize = 1;
-            } else {
+            }
+            else {
                 boxSize = tempBoxSize;
             }
             pointDrawingActivated = !pointDrawingActivated;
-        } else if (evt.which == 46) { // delete key
+        }
+        else if (evt.which == 46) { // delete key
             points = [];
             springs = [];
         }
+        else if (evt.which == 72) { // h key
+            $('#lb_background, #lb_front').fadeIn(200);
+        }
     });
+    
     $('#myCanvas').mousedown(function(evt) {
         if (evt.button == 2) {
             selectPoints();
@@ -54,23 +70,24 @@ function main() {
             createPoint();
         }
     });
-
+    
     $('#body').mouseup(function(evt) {
         if (evt.button == 1) {
             middleMouseDown = false;
         }
     });
+    
     $('#body').mousemove(function(evt) {
         mouseX = evt.clientX;
         mouseY = evt.clientY;
     });
+    
     setInterval(doFrame, 5);
 }
 
 // Draws the scene.
 function draw() {
     var ctx = $('#myCanvas')[0].getContext('2d');
-    
     for (var i = 0; i < springs.length; i++) {
         springs[i].draw(ctx);
     }
@@ -84,12 +101,21 @@ function draw() {
 function setUpCanvas() {
     
     var ctx = $('#myCanvas')[0].getContext('2d');
-
     windowWidth = window.innerWidth;
     windowHeight = window.innerHeight;
-
     ctx.canvas.width = windowWidth;
     ctx.canvas.height = windowHeight;
+    
+    ctx.fillStyle = '#C4C4C4'; // set canvas background color
+    ctx.fillRect(0, 0, windowWidth, windowHeight);
+    
+    /*
+    ctx.font = '20pt Century Gothic';
+    ctx.fillStyle = '#FFFFFF';
+    
+    void fillText("asd", 50, 50); 
+    */
+
 }
 
 // Updates the scene.
@@ -123,6 +149,7 @@ function dragPoints() {
                     draggedExists = true;
                 }
                 if (points[i].isDragged) {
+                    points[i].lastPosition = points[i].position.copy();
                     points[i].position = new Vector(mouseX, mouseY);
                     points[i].velocity = new Vector(0, 0);
                 }
@@ -130,6 +157,7 @@ function dragPoints() {
             }
             else {
                 if (points[i].isDragged) {
+                    points[i].lastPosition = points[i].position.copy();
                     points[i].position = new Vector(mouseX, mouseY);
                     points[i].velocity = new Vector(0, 0);
                 }
@@ -202,7 +230,8 @@ function Spring(firstPoint, secondPoint) {
             return true;
         }
         return false;
-    }; // updates the spring, attracting the two affected points.
+    };
+    // updates the spring, attracting the two affected points.
     this.update = function () {
         var distanceVector = this.second.position.subtract(this.first.position);
         var distance = distanceVector.length();
@@ -210,7 +239,8 @@ function Spring(firstPoint, secondPoint) {
         var velocity = distanceVector.normalize().multiply(1 / 100).multiply(adjustedDistance);
         this.first.velocity = this.first.velocity.add(velocity);
         this.second.velocity = this.second.velocity.subtract(velocity);
-    }; // draws the spring.
+    };
+    // draws the spring.
     this.draw = function (ctx) {
         if (springDrawingActivated) {
             ctx.lineWidth = 1;
@@ -237,10 +267,12 @@ function MassPoint(posX, posY) {
             this.velocity = this.velocity.add(new Vector(0, gravity));
         }
         this.lastPosition = this.position.copy();
-        this.position = this.position.add(this.velocity.add(this.position.subtract(this.lastPosition).multiply(1)));
+        this.position = this.position.add(this.velocity);
+        //this.position = this.position.add(this.position.subtract(this.lastPosition));
         this.velocity = this.velocity.multiply(1 - airResistance);
         this.collideWithWalls();
     };
+    // draws the masspoint.
     this.draw = function (ctx) {
         if (pointDrawingActivated) {
             if (this.isSelected) {
