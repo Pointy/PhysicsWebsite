@@ -4,9 +4,9 @@ var windowWidth = 0;
 var windowHeight = 0;
 
 var gravity = 0.04;
-var airResistance = 0.01;
+var airResistance = 0.005;
 var bounceResistance = 0.5;
-var friction = 0.05;
+var friction = 0.2;
 var boxSize = 10;
 var springLength = 100;
 var tempBoxSize = boxSize;
@@ -24,34 +24,28 @@ var springs = [];
 
 // Main function, called on document load.
 function main() {
-    document.onkeydown = function (evt) {
+    $('#body').keydown(function (evt) {
         if (evt.which == 32) { // spacebar
             gravityActivated = !gravityActivated;
-        }
-        else if (evt.which == 83) { // s key
+        } else if (evt.which == 83) { // s key
             springDrawingActivated = !springDrawingActivated;
-        }
-        else if (evt.which == 80) { // p key
+        } else if (evt.which == 80) { // p key
             if (pointDrawingActivated) {
-                
+
                 tempBoxSize = boxSize;
                 boxSize = 1;
-            }
-            else {
+            } else {
                 boxSize = tempBoxSize;
             }
             pointDrawingActivated = !pointDrawingActivated;
-        }
-        else if (evt.which == 46) { // delete key
+        } else if (evt.which == 46) { // delete key
             points = [];
             springs = [];
         }
-    }
-
-    document.body.onmousedown = function (evt) {
+    });
+    $('#myCanvas').mousedown(function(evt) {
         if (evt.button == 2) {
             selectPoints();
-            console.log(100);
         }
         if (evt.button == 1) {
             middleMouseDown = true;
@@ -59,25 +53,23 @@ function main() {
         if (evt.button == 0) {
             createPoint();
         }
-    }
+    });
 
-    document.body.onmouseup = function (evt) {
+    $('#body').mouseup(function(evt) {
         if (evt.button == 1) {
             middleMouseDown = false;
         }
-    }
-
-    document.onmousemove = function (evt) {
+    });
+    $('#body').mousemove(function(evt) {
         mouseX = evt.clientX;
         mouseY = evt.clientY;
-    }
+    });
     setInterval(doFrame, 5);
 }
 
 // Draws the scene.
 function draw() {
-    var c = document.getElementById("myCanvas");
-    var ctx = c.getContext("2d");
+    var ctx = $('#myCanvas')[0].getContext('2d');
     
     for (var i = 0; i < springs.length; i++) {
         springs[i].draw(ctx);
@@ -90,9 +82,8 @@ function draw() {
 
 // Set up canvas, resize it to fit the screen and clear every frame.
 function setUpCanvas() {
-    var c = document.getElementById("myCanvas");
-
-    var ctx = c.getContext("2d");
+    
+    var ctx = $('#myCanvas')[0].getContext('2d');
 
     windowWidth = window.innerWidth;
     windowHeight = window.innerHeight;
@@ -185,7 +176,7 @@ function connectPoints() {
         for (var j = i + 1; j < points.length; j++) {
             if (points[i].isSelected && points[j].isSelected) {
                 atLeastTwoSelected = true;
-                var newSpring = new Spring(points[i], points[j])
+                var newSpring = new Spring(points[i], points[j]);
                 if (!springExists(newSpring)) {
                     springs.push(newSpring);
                 }
@@ -211,9 +202,7 @@ function Spring(firstPoint, secondPoint) {
             return true;
         }
         return false;
-    }
-
-    // updates the spring, attracting the two affected points.
+    }; // updates the spring, attracting the two affected points.
     this.update = function () {
         var distanceVector = this.second.position.subtract(this.first.position);
         var distance = distanceVector.length();
@@ -221,9 +210,7 @@ function Spring(firstPoint, secondPoint) {
         var velocity = distanceVector.normalize().multiply(1 / 100).multiply(adjustedDistance);
         this.first.velocity = this.first.velocity.add(velocity);
         this.second.velocity = this.second.velocity.subtract(velocity);
-    }
-
-    // draws the spring.
+    }; // draws the spring.
     this.draw = function (ctx) {
         if (springDrawingActivated) {
             ctx.lineWidth = 1;
@@ -233,12 +220,13 @@ function Spring(firstPoint, secondPoint) {
             ctx.lineTo(this.second.position.x, this.second.position.y);
             ctx.stroke();
         }
-    }
+    };
 }
 
 // MassPoint object, for storing and operating on points in 2d space.
 function MassPoint(posX, posY) {
     this.position = new Vector(posX, posY);
+    this.lastPosition = this.position.copy();
     this.velocity = new Vector(0, 0);
     this.isDragged = false;
     this.isSelected = false;
@@ -248,11 +236,11 @@ function MassPoint(posX, posY) {
         if (gravityActivated) {
             this.velocity = this.velocity.add(new Vector(0, gravity));
         }
-        this.position = this.position.add(this.velocity);
+        this.lastPosition = this.position.copy();
+        this.position = this.position.add(this.velocity.add(this.position.subtract(this.lastPosition).multiply(1)));
         this.velocity = this.velocity.multiply(1 - airResistance);
         this.collideWithWalls();
-    }
-
+    };
     this.draw = function (ctx) {
         if (pointDrawingActivated) {
             if (this.isSelected) {
@@ -265,8 +253,7 @@ function MassPoint(posX, posY) {
             ctx.arc(this.position.x, this.position.y, boxSize / 2 - 1, 0, 2 * Math.PI, false);
             ctx.fill();
         }
-    }
-
+    };
     // handles collision of the masspoint with the sides of the window.
     this.collideWithWalls = function () {
         if (this.position.x < boxSize / 2) { // if too far left.
@@ -292,7 +279,7 @@ function MassPoint(posX, posY) {
             this.velocity.y = Math.abs(this.velocity.y) * -1 * (1 - bounceResistance);
             this.velocity.x *= 1 - friction;
         }
-    }
+    };
 }
 
 // Vector object for storing and operating on two-dimensional vectors.
@@ -302,20 +289,19 @@ function Vector(x, y) {
 
     this.add = function (other) {
         return new Vector(this.x + other.x, this.y + other.y);
-    }
-
+    };
     this.subtract = function (other) {
         return this.add(other.multiply(-1));
-    }
-
+    };
     this.multiply = function (scalar) {
         return new Vector(this.x * scalar, this.y * scalar);
-    }
-
+    };
     this.length = function () {
         return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
-    }
-
+    };
+    this.copy = function () {
+        return new Vector(this.x, this.y);
+    };
     this.normalize = function () {
         if (this.length() > 0) {
             return new Vector(this.x / this.length(), this.y / this.length());
@@ -323,5 +309,5 @@ function Vector(x, y) {
         else {
             return new Vector(0.1, 0.1);
         }
-    }
+    };
 }
