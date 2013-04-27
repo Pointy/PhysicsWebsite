@@ -23,7 +23,15 @@ var springs = [];
 
 
 // Main function, called on document load.
-function main() {   
+function main() {
+    $('#lb_background').click(function () {
+        $('#lb_background, #lb_front').fadeOut(200);
+    });
+    
+    $('#lb_front').click(function () {
+        $('#lb_background, #lb_front').fadeOut(200);
+    });
+    
     $('#body').keydown(function (evt) {
         if (evt.which == 32) { // spacebar
             gravityActivated = !gravityActivated;

@@ -3,3 +3,26 @@
   height: 100%;
   margin: 0px;
 }
+
+#lb_background {
+    position: absolute; /*THIS IS REQUIRED!*/
+    height: 100%;
+    width: 100%;
+    background-color: black;
+    z-index: 1000; /* In front of everything */
+    opacity: 0.6;
+}
+
+#lb_front {
+    padding: 20px;
+    z-index: 1001; /* In front of lb_background */
+    position: absolute;
+    top: 50px;
+    font-family: "Century Gothic";
+    font-size: 50px;
+    color: white;
+}
+
+#instructions {
+    font-size: 25px;   
+}
