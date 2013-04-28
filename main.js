@@ -14,8 +14,10 @@ var tempBoxSize = boxSize;
 var gravityActivated = true;
 var springDrawingActivated = true;
 var pointDrawingActivated = true;
+var fixedPointCreationActivated = false;
 var middleMouseDown = false;
 var draggedExists = false;
+var paused = false;
 
 var points = [];
 var springs = [];
@@ -46,8 +48,19 @@ function main() {
             points = [];
             springs = [];
         }
-        else if (evt.which == 72) { // h key
-            $('#lb_background, #lb_front').fadeIn(200);
+        else if (evt.which == 70) { // f key
+            fixedPointCreationActivated = !fixedPointCreationActivated;
+        }
+        else if (evt.which == 85) { // u key
+            paused = !paused;
+        }
+        else if (evt.which == 187) { // plus key
+            springLength += 10;
+        }
+        else if (evt.which == 189) { // dash
+            if (springLength > 10) {
+                springLength -= 10;
+            }
         }
     });
     
@@ -77,6 +90,15 @@ function main() {
     setInterval(doFrame, 5);
 }
 
+function updateSettings() {
+    $('#PointDrawingOn')[0].innerHTML = pointDrawingActivated ? "enabled" : "disabled";
+    $('#SpringDrawingOn')[0].innerHTML = springDrawingActivated ? "enabled" : "disabled";
+    $('#GravityOn')[0].innerHTML = gravityActivated ? "enabled" : "disabled";
+    $('#FixedPointCreation')[0].innerHTML = fixedPointCreationActivated ? "enabled" : "disabled";
+    $('#Paused')[0].innerHTML = paused ? "paused" : "unpaused";
+    $('#SpringSize')[0].innerHTML = springLength;
+}
+
 // Draws the scene.
 function draw() {
     var ctx = $('#myCanvas')[0].getContext('2d');
@@ -100,14 +122,17 @@ function setUpCanvas() {
 
 // Updates the scene.
 function update() {
-    for (var i = 0; i < points.length; i++) {
-        points[i].update();
+    if (!paused) {
+        for (var i = 0; i < points.length; i++) {
+            points[i].update();
+        }
+
+        for (var i = 0; i < springs.length; i++) {
+            springs[i].update();
+        }
     }
 
-    for (var i = 0; i < springs.length; i++) {
-        springs[i].update();
-    }
-    
+    updateSettings();
     connectPoints();
     dragPoints();
 }
@@ -155,7 +180,11 @@ function dragPoints() {
 
 // Creates a mass point with the mouse position.
 function createPoint() {
-    points.push(new MassPoint(mouseX, mouseY));
+    var newPoint = new MassPoint(mouseX, mouseY);
+    if (fixedPointCreationActivated) {
+        newPoint.isFixed = true;
+    }
+    points.push(newPoint);
 }
 
 // Selects points that are next to the mouse cursor when you right click.
@@ -240,23 +269,29 @@ function MassPoint(posX, posY) {
     this.velocity = new Vector(0, 0);
     this.isDragged = false;
     this.isSelected = false;
+    this.isFixed = false;
 
     // updates the masspoint - moves it and changes the velocity.
     this.update = function () {
-        if (gravityActivated) {
-            this.velocity = this.velocity.add(new Vector(0, gravity));
+        if (!this.isFixed) {
+            if (gravityActivated) {
+                this.velocity = this.velocity.add(new Vector(0, gravity));
+            }
+            this.lastPosition = this.position.copy();
+            this.position = this.position.add(this.velocity);
+            //this.position = this.position.add(this.position.subtract(this.lastPosition));
+            this.velocity = this.velocity.multiply(1 - airResistance);
+            this.collideWithWalls();
         }
-        this.lastPosition = this.position.copy();
-        this.position = this.position.add(this.velocity);
-        //this.position = this.position.add(this.position.subtract(this.lastPosition));
-        this.velocity = this.velocity.multiply(1 - airResistance);
-        this.collideWithWalls();
     };
     // draws the masspoint.
     this.draw = function (ctx) {
         if (pointDrawingActivated) {
             if (this.isSelected) {
                 ctx.fillStyle = 'green';
+            }
+            else if (this.isFixed) {
+                ctx.fillStyle = 'red';
             }
             else {
                 ctx.fillStyle = 'black';
