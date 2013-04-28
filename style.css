@@ -26,6 +26,30 @@
     z-index: 2;
 }
 
+#contact {
+    position: absolute;
+    bottom: 0px;
+    padding-bottom: 3px;
+    padding-left: 7px;
+}
+
 .setting {
     color: #b5b5d5;   
 }
+
+.fb-like {
+    z-index: 100;
+
+    position:absolute;
+    float: right;
+    color: #004993;
+    font-family:Arial, Helvetica, sans-serif;
+    font-size: 10px;
+    font-weight: bold;
+    height: 15px;
+    padding-bottom: 0px;
+    padding-left: 5px;
+    padding-top: 2px;
+    padding: 7px;
+}
+

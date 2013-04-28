@@ -8,6 +8,15 @@
     <link href="style.css" rel="stylesheet" type="text/css" />
 </head>
     <body onload="main()" id="body">
+        <div id="fb-root"></div>
+        <script>(function (d, s, id) {
+            var js, fjs = d.getElementsByTagName(s)[0];
+            if (d.getElementById(id)) return;
+            js = d.createElement(s); js.id = id;
+            js.src = "http://connect.facebook.net/en_US/all.js#xfbml=1";
+            fjs.parentNode.insertBefore(js, fjs);
+            }(document, 'script', 'facebook-jssdk'));
+        </script>
         <div id='instructions'>
             1. Left click to create new a new point. <br/>
             2. Right click to select a point. If more than two points are selected, they will be connected with a spring. <br/>
@@ -29,6 +38,10 @@
                 The spring size is <span id="SpringSize" class="setting"></span>
             </span>
         </div>
+        <div id="contact">
+            Contact me at subsbox@hotmail.com
+        </div>
+        <div class="fb-like" data-href="http://www.chubmarine.com/" data-send="true" data-layout="button_count" data-width="80" data-show-faces="false"></div>
         <canvas id="myCanvas" oncontextmenu="return false;"></canvas>
     </body>
 </html>

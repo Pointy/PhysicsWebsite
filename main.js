@@ -15,9 +15,12 @@ var gravityActivated = true;
 var springDrawingActivated = true;
 var pointDrawingActivated = true;
 var fixedPointCreationActivated = false;
-var middleMouseDown = false;
 var draggedExists = false;
 var paused = false;
+
+var middleMouseDown = false;
+var shiftDown = false;
+var leftMouseDown = false;
 
 var points = [];
 var springs = [];
@@ -62,16 +65,28 @@ function main() {
                 springLength -= 10;
             }
         }
+        else if (evt.which == 16) { // shift key
+            shiftDown = true;
+        }
+    });
+    
+    $('body').keyup(function(evt) {
+        if (evt.which == 16) {
+            shiftDown = false;
+        }
     });
     
     $('#body').mousedown(function (evt) {
+        if (evt.button == 0) {
+            leftMouseDown = true;
+        }
         if (evt.button == 2) {
             selectPoints();
         }
         if (evt.button == 1) {
             middleMouseDown = true;
         }
-        if (evt.button == 0) {
+        if (evt.button == 0 && !shiftDown) {
             createPoint();
         }
     });
@@ -79,6 +94,9 @@ function main() {
     $('#body').mouseup(function(evt) {
         if (evt.button == 1) {
             middleMouseDown = false;
+        }
+        if (evt.button == 0) {
+            leftMouseDown = false;
         }
     });
     
@@ -147,7 +165,7 @@ function doFrame() {
 // Drags points using the middle mouse button.
 function dragPoints() {
     for (var i = 0; i < points.length; i++) {
-        if (middleMouseDown) {
+        if (middleMouseDown || (shiftDown && leftMouseDown)) {
             if (new Vector(mouseX, mouseY).subtract(points[i].position).length() < 20) {
                 if (!points[i].isDragged && !draggedExists) {
                     points[i].isDragged = true;
