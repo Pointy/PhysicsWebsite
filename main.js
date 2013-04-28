@@ -162,7 +162,7 @@ function doFrame() {
     update();
 }
 
-// Drags points using the middle mouse button.
+// Drags points using the middle mouse button or shift click.
 function dragPoints() {
     for (var i = 0; i < points.length; i++) {
         if (middleMouseDown || (shiftDown && leftMouseDown)) {
