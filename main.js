@@ -27,15 +27,22 @@ var leftMouseDown = false;
 var points = [];
 var springs = [];
 
-// Initialize event handlers
-$('#body').keydown(function (evt) {
-    if (evt.which == 32) { // spacebar
-        gravityActivated = !gravityActivated;
-    }
-    else if (evt.which == 83) { // s key
-        springDrawingActivated = !springDrawingActivated;
-    }
-    else if (evt.which == 80) { // p key
+$.fn.ableness = function(f) { return this.text(f ? "enabled" : "disabled"); };
+
+// Interactions for changing the simulation settings
+var keyActions = {
+  // space bar
+  "32": function() {
+      gravityActivated = !gravityActivated;
+      $('#GravityOn').ableness(gravityActivated);
+    },
+  // "s"
+  "83": function() {
+      springDrawingActivated = !springDrawingActivated;
+      $('#SpringDrawingOn').ableness(springDrawingActivated);
+    },
+  // "p"
+  "80": function() {
         if (pointDrawingActivated) {
 
             tempBoxSize = boxSize;
@@ -45,28 +52,41 @@ $('#body').keydown(function (evt) {
             boxSize = tempBoxSize;
         }
         pointDrawingActivated = !pointDrawingActivated;
-    }
-    else if (evt.which == 46) { // delete key
+        $('#PointDrawingOn').ableness(pointDrawingActivated);
+      },
+  // delete
+  "46": function() {
         points = [];
         springs = [];
-    }
-    else if (evt.which == 70) { // f key
-        fixedPointCreationActivated = !fixedPointCreationActivated;
-    }
-    else if (evt.which == 85) { // u key
-        paused = !paused;
-    }
-    else if (evt.which == 187) { // plus key
-        springLength += 10;
-    }
-    else if (evt.which == 189) { // dash
-        if (springLength > 10) {
-            springLength -= 10;
-        }
-    }
-    else if (evt.which == 16) { // shift key
-        shiftDown = true;
-    }
+      },
+  // "f"
+  "70": function() {
+      fixedPointCreationActivated = !fixedPointCreationActivated;
+      $('#FixedPointCreation').ableness(fixedPointCreationActivated);
+    },
+  // "u"
+  "85": function() {
+      paused = !paused;
+      $('#Paused').text(paused ? "paused" : "unpaused");
+    },
+  // "+"
+  "187": function() {
+      springLength += 10;
+      $('#SpringSize').text(springLength);
+    },
+  // "-"
+  "189": function() {
+      springLength = Math.max(10, springLength - 10);
+      $('#SpringSize').text(springLength);
+    },
+  // shift
+  "16": function() { shiftDown = true; }
+};
+
+// Set up the event handlers
+$('#body').keydown(function (evt) {
+  if (keyActions[evt.which])
+    keyActions[evt.which]();
 });
 
 $('body').keyup(function(evt) {
@@ -107,15 +127,6 @@ $('#body').mousemove(function(evt) {
 // Start the animation
 setInterval(doFrame, 5);
 
-function updateSettings() {
-    $('#PointDrawingOn')[0].innerHTML = pointDrawingActivated ? "enabled" : "disabled";
-    $('#SpringDrawingOn')[0].innerHTML = springDrawingActivated ? "enabled" : "disabled";
-    $('#GravityOn')[0].innerHTML = gravityActivated ? "enabled" : "disabled";
-    $('#FixedPointCreation')[0].innerHTML = fixedPointCreationActivated ? "enabled" : "disabled";
-    $('#Paused')[0].innerHTML = paused ? "paused" : "unpaused";
-    $('#SpringSize')[0].innerHTML = springLength;
-}
-
 // Draws the scene.
 function draw() {
     var ctx = $('#myCanvas')[0].getContext('2d');
@@ -149,7 +160,6 @@ function update() {
         }
     }
 
-    updateSettings();
     connectPoints();
     dragPoints();
 }
