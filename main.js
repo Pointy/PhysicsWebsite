@@ -1,4 +1,6 @@
-﻿var mouseX = 0;
+﻿jQuery(function($) {
+
+var mouseX = 0;
 var mouseY = 0;
 var windowWidth = 0;
 var windowHeight = 0;
@@ -25,88 +27,85 @@ var leftMouseDown = false;
 var points = [];
 var springs = [];
 
+// Initialize event handlers
+$('#body').keydown(function (evt) {
+    if (evt.which == 32) { // spacebar
+        gravityActivated = !gravityActivated;
+    }
+    else if (evt.which == 83) { // s key
+        springDrawingActivated = !springDrawingActivated;
+    }
+    else if (evt.which == 80) { // p key
+        if (pointDrawingActivated) {
 
+            tempBoxSize = boxSize;
+            boxSize = 1;
+        }
+        else {
+            boxSize = tempBoxSize;
+        }
+        pointDrawingActivated = !pointDrawingActivated;
+    }
+    else if (evt.which == 46) { // delete key
+        points = [];
+        springs = [];
+    }
+    else if (evt.which == 70) { // f key
+        fixedPointCreationActivated = !fixedPointCreationActivated;
+    }
+    else if (evt.which == 85) { // u key
+        paused = !paused;
+    }
+    else if (evt.which == 187) { // plus key
+        springLength += 10;
+    }
+    else if (evt.which == 189) { // dash
+        if (springLength > 10) {
+            springLength -= 10;
+        }
+    }
+    else if (evt.which == 16) { // shift key
+        shiftDown = true;
+    }
+});
 
-// Main function, called on document load.
-function main() {
-    $('#body').keydown(function (evt) {
-        if (evt.which == 32) { // spacebar
-            gravityActivated = !gravityActivated;
-        }
-        else if (evt.which == 83) { // s key
-            springDrawingActivated = !springDrawingActivated;
-        }
-        else if (evt.which == 80) { // p key
-            if (pointDrawingActivated) {
+$('body').keyup(function(evt) {
+    if (evt.which == 16) {
+        shiftDown = false;
+    }
+});
 
-                tempBoxSize = boxSize;
-                boxSize = 1;
-            }
-            else {
-                boxSize = tempBoxSize;
-            }
-            pointDrawingActivated = !pointDrawingActivated;
-        }
-        else if (evt.which == 46) { // delete key
-            points = [];
-            springs = [];
-        }
-        else if (evt.which == 70) { // f key
-            fixedPointCreationActivated = !fixedPointCreationActivated;
-        }
-        else if (evt.which == 85) { // u key
-            paused = !paused;
-        }
-        else if (evt.which == 187) { // plus key
-            springLength += 10;
-        }
-        else if (evt.which == 189) { // dash
-            if (springLength > 10) {
-                springLength -= 10;
-            }
-        }
-        else if (evt.which == 16) { // shift key
-            shiftDown = true;
-        }
-    });
-    
-    $('body').keyup(function(evt) {
-        if (evt.which == 16) {
-            shiftDown = false;
-        }
-    });
-    
-    $('#body').mousedown(function (evt) {
-        if (evt.button == 0) {
-            leftMouseDown = true;
-        }
-        if (evt.button == 2) {
-            selectPoints();
-        }
-        if (evt.button == 1) {
-            middleMouseDown = true;
-        }
-        if (evt.button == 0 && !shiftDown) {
-            createPoint();
-        }
-    });
-    
-    $('#body').mouseup(function(evt) {
-        if (evt.button == 1) {
-            middleMouseDown = false;
-        }
-        if (evt.button == 0) {
-            leftMouseDown = false;
-        }
-    });
-    
-    $('#body').mousemove(function(evt) {
-        mouseX = evt.clientX;
-        mouseY = evt.clientY;
-    });
-    
-    setInterval(doFrame, 5);
-}
+$('#body').mousedown(function (evt) {
+    if (evt.button == 0) {
+        leftMouseDown = true;
+    }
+    if (evt.button == 2) {
+        selectPoints();
+    }
+    if (evt.button == 1) {
+        middleMouseDown = true;
+    }
+    if (evt.button == 0 && !shiftDown) {
+        createPoint();
+    }
+});
+
+$('#body').mouseup(function(evt) {
+    if (evt.button == 1) {
+        middleMouseDown = false;
+    }
+    if (evt.button == 0) {
+        leftMouseDown = false;
+    }
+});
+
+$('#body').mousemove(function(evt) {
+    mouseX = evt.clientX;
+    mouseY = evt.clientY;
+});
+
+// Start the animation
+setInterval(doFrame, 5);
 
 function updateSettings() {
     $('#PointDrawingOn')[0].innerHTML = pointDrawingActivated ? "enabled" : "disabled";
@@ -376,3 +375,5 @@ function Vector(x, y) {
         }
     };
 }
+
+});
