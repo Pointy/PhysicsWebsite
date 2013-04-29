@@ -29,6 +29,8 @@ var pi2 = 2 * Math.PI;
 var points = [];
 var springs = [];
 
+var ctx = $('#myCanvas')[0].getContext('2d');
+
 $.fn.ableness = function(f) { return this.text(f ? "enabled" : "disabled"); };
 
 // Interactions for changing the simulation settings
@@ -143,11 +145,12 @@ function draw() {
 
 // Set up canvas, resize it to fit the screen and clear every frame.
 function setUpCanvas() {
-    var ctx = $('#myCanvas')[0].getContext('2d');
-    windowWidth = window.innerWidth;
-    windowHeight = window.innerHeight;
-    ctx.canvas.width = windowWidth;
-    ctx.canvas.height = windowHeight;
+    if (window.innerWidth !== windowWidth || window.innerHeight !== windowHeight) {
+      ctx.canvas.width = windowWidth = window.innerWidth;
+      ctx.canvas.height = windowHeight = window.innerHeight;
+    }
+    else
+      ctx.clearRect(0, 0, windowWidth, windowHeight);
 }
 
 // Updates the scene.
