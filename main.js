@@ -2,6 +2,145 @@
 
 jQuery(function($) {
 
+// Spring object, used for attracting points to eachother.
+function Spring(firstPoint, secondPoint) {
+    this.first = firstPoint;
+    this.second = secondPoint;
+}
+
+Spring.prototype = {
+    // checks if the spring is equal to another.
+    equals: function (x, y) {
+        return (this.first === x && this.second === y) || (this.first === y && this.second === x);
+    },
+    // updates the spring, attracting the two affected points.
+    update: function () {
+        var distanceVector = this.second.position.subtract(this.first.position);
+        var distance = distanceVector.length();
+        var adjustedDistance = distance - options.springLength;
+        var velocity = distanceVector.normalize().multiply(1 / 100).multiply(adjustedDistance);
+        this.first.velocity = this.first.velocity.add(velocity);
+        this.second.velocity = this.second.velocity.subtract(velocity);
+    },
+    // draws the spring.
+    draw: function (ctx) {
+        if (options.springDrawingActivated) {
+            ctx.beginPath();
+            ctx.moveTo(this.first.position.x, this.first.position.y);
+            ctx.lineTo(this.second.position.x, this.second.position.y);
+            ctx.stroke();
+        }
+    }
+};
+
+// MassPoint object, for storing and operating on points in 2d space.
+function MassPoint(posX, posY) {
+    this.position = new Vector(posX, posY);
+    this.lastPosition = this.position.copy();
+    this.velocity = V0;
+    this.isDragged = false;
+    this.isSelected = false;
+    this.isFixed = false;
+}
+
+MassPoint.prototype = {
+    // updates the masspoint - moves it and changes the velocity.
+    update: function () {
+        if (!this.isFixed) {
+            if (options.gravityActivated) {
+                this.velocity = this.velocity.add(new Vector(0, gravity));
+            }
+            this.lastPosition = this.position.copy();
+            this.position = this.position.add(this.velocity);
+            //this.position = this.position.add(this.position.subtract(this.lastPosition));
+            this.velocity = this.velocity.multiply(1 - airResistance);
+            this.collideWithWalls();
+        }
+    },
+    // draws the masspoint.
+    draw: function (ctx) {
+        if (options.pointDrawingActivated) {
+            if (this.isSelected) {
+                ctx.fillStyle = 'green';
+            }
+            else if (this.isFixed) {
+                ctx.fillStyle = 'red';
+            }
+            else {
+                ctx.fillStyle = 'black';
+            }
+            ctx.beginPath();
+            ctx.arc(this.position.x, this.position.y, boxSize / 2 - 1, 0, pi2, false);
+            ctx.fill();
+        }
+    },
+    // handles collision of the masspoint with the sides of the window.
+    collideWithWalls: function () {
+        var bs2 = boxSize / 2;
+
+        if (this.position.x < bs2) { // if too far left.
+            this.position.x = bs2;
+            this.velocity.x = Math.abs(this.velocity.x) * (1 - bounceResistance);
+            this.velocity.y *= 1 - friction;
+        }
+
+        if (this.position.y < bs2) { // if too far up.
+            this.position.y = bs2;
+            this.velocity.y = Math.abs(this.velocity.y) * (1 - bounceResistance);
+            this.velocity.x *= 1 - friction;
+        }
+
+        if (this.position.x > windowWidth - bs2) { // if too far to the right.
+            this.position.x = windowWidth - bs2;
+            this.velocity.x = Math.abs(this.velocity.x) * -1 * (1 - bounceResistance);
+            this.velocity.y *= 1 - friction;
+        }
+
+        if (this.position.y > windowHeight - bs2) { // if too far to the bottom.
+            this.position.y = windowHeight - bs2;
+            this.velocity.y = Math.abs(this.velocity.y) * -1 * (1 - bounceResistance);
+            this.velocity.x *= 1 - friction;
+        }
+    }
+};
+
+// Vector object for storing and operating on two-dimensional vectors.
+function Vector(x, y) {
+    this.x = x;
+    this.y = y;
+}
+
+Vector.prototype = {
+    add: function (other) {
+        return new Vector(this.x + other.x, this.y + other.y);
+    },
+    subtract: function (other) {
+        return this.add(other.multiply(-1));
+    },
+    multiply: function (scalar) {
+        return new Vector(this.x * scalar, this.y * scalar);
+    },
+    length: function () {
+        return Math.sqrt(this.x * this.x + this.y * this.y);
+    },
+    shorterThan: function(what) {
+        return this.x * this.x + this.y * this.y < what * what;
+    },
+    copy: function () {
+        return new Vector(this.x, this.y);
+    },
+    normalize: function () {
+        var len;
+
+        if (this.x !== 0 || this.y !== 0) {
+            len = this.length();
+            return new Vector(this.x / len, this.y / len);
+        }
+
+        return new Vector(0.1, 0.1);
+    }
+};
+
 var mouseX = 0;
 var mouseY = 0;
 var windowWidth = 0;
@@ -29,6 +168,7 @@ var shiftDown = false;
 var leftMouseDown = false;
 
 var pi2 = 2 * Math.PI;
+var V0 = new Vector(0, 0);
 
 var points = [];
 var springs = [];
@@ -148,7 +288,6 @@ setInterval(doFrame, 5);
 
 // Draws the scene.
 function draw() {
-    var ctx = $('#myCanvas')[0].getContext('2d');
     for (var i = 0; i < springs.length; i++) {
         springs[i].draw(ctx);
     }
@@ -207,7 +346,7 @@ function dragPoints() {
                 if (points[i].isDragged) {
                     points[i].lastPosition = points[i].position.copy();
                     points[i].position = curpos;
-                    points[i].velocity = new Vector(0, 0);
+                    points[i].velocity = V0;
                 }
 
             }
@@ -215,7 +354,7 @@ function dragPoints() {
                 if (points[i].isDragged) {
                     points[i].lastPosition = points[i].position.copy();
                     points[i].position = curpos;
-                    points[i].velocity = new Vector(0, 0);
+                    points[i].velocity = V0;
                 }
                 else {
                     points[i].isDragged = false;
@@ -280,144 +419,5 @@ function connectPoints() {
         }
     }
 }
-
-// Spring object, used for attracting points to eachother.
-function Spring(firstPoint, secondPoint) {
-    this.first = firstPoint;
-    this.second = secondPoint;
-}
-
-Spring.prototype = {
-    // checks if the spring is equal to another.
-    equals: function (x, y) {
-        return (this.first === x && this.second === y) || (this.first === y && this.second === x);
-    },
-    // updates the spring, attracting the two affected points.
-    update: function () {
-        var distanceVector = this.second.position.subtract(this.first.position);
-        var distance = distanceVector.length();
-        var adjustedDistance = distance - options.springLength;
-        var velocity = distanceVector.normalize().multiply(1 / 100).multiply(adjustedDistance);
-        this.first.velocity = this.first.velocity.add(velocity);
-        this.second.velocity = this.second.velocity.subtract(velocity);
-    },
-    // draws the spring.
-    draw: function (ctx) {
-        if (options.springDrawingActivated) {
-            ctx.beginPath();
-            ctx.moveTo(this.first.position.x, this.first.position.y);
-            ctx.lineTo(this.second.position.x, this.second.position.y);
-            ctx.stroke();
-        }
-    }
-};
-
-// MassPoint object, for storing and operating on points in 2d space.
-function MassPoint(posX, posY) {
-    this.position = new Vector(posX, posY);
-    this.lastPosition = this.position.copy();
-    this.velocity = new Vector(0, 0);
-    this.isDragged = false;
-    this.isSelected = false;
-    this.isFixed = false;
-}
-
-MassPoint.prototype = {
-    // updates the masspoint - moves it and changes the velocity.
-    update: function () {
-        if (!this.isFixed) {
-            if (options.gravityActivated) {
-                this.velocity = this.velocity.add(new Vector(0, gravity));
-            }
-            this.lastPosition = this.position.copy();
-            this.position = this.position.add(this.velocity);
-            //this.position = this.position.add(this.position.subtract(this.lastPosition));
-            this.velocity = this.velocity.multiply(1 - airResistance);
-            this.collideWithWalls();
-        }
-    },
-    // draws the masspoint.
-    draw: function (ctx) {
-        if (options.pointDrawingActivated) {
-            if (this.isSelected) {
-                ctx.fillStyle = 'green';
-            }
-            else if (this.isFixed) {
-                ctx.fillStyle = 'red';
-            }
-            else {
-                ctx.fillStyle = 'black';
-            }
-            ctx.beginPath();
-            ctx.arc(this.position.x, this.position.y, boxSize / 2 - 1, 0, pi2, false);
-            ctx.fill();
-        }
-    },
-    // handles collision of the masspoint with the sides of the window.
-    collideWithWalls: function () {
-        var bs2 = boxSize / 2;
-
-        if (this.position.x < bs2) { // if too far left.
-            this.position.x = bs2;
-            this.velocity.x = Math.abs(this.velocity.x) * (1 - bounceResistance);
-            this.velocity.y *= 1 - friction;
-        }
-
-        if (this.position.y < bs2) { // if too far up.
-            this.position.y = bs2;
-            this.velocity.y = Math.abs(this.velocity.y) * (1 - bounceResistance);
-            this.velocity.x *= 1 - friction;
-        }
-
-        if (this.position.x > windowWidth - bs2) { // if too far to the right.
-            this.position.x = windowWidth - bs2;
-            this.velocity.x = Math.abs(this.velocity.x) * -1 * (1 - bounceResistance);
-            this.velocity.y *= 1 - friction;
-        }
-
-        if (this.position.y > windowHeight - bs2) { // if too far to the bottom.
-            this.position.y = windowHeight - bs2;
-            this.velocity.y = Math.abs(this.velocity.y) * -1 * (1 - bounceResistance);
-            this.velocity.x *= 1 - friction;
-        }
-    }
-};
-
-// Vector object for storing and operating on two-dimensional vectors.
-function Vector(x, y) {
-    this.x = x;
-    this.y = y;
-}
-
-Vector.prototype = {
-    add: function (other) {
-        return new Vector(this.x + other.x, this.y + other.y);
-    },
-    subtract: function (other) {
-        return this.add(other.multiply(-1));
-    },
-    multiply: function (scalar) {
-        return new Vector(this.x * scalar, this.y * scalar);
-    },
-    length: function () {
-        return Math.sqrt(this.x * this.x + this.y * this.y);
-    },
-    shorterThan: function(what) {
-        return this.x * this.x + this.y * this.y < what * what;
-    },
-    copy: function () {
-        return new Vector(this.x, this.y);
-    },
-    normalize: function () {
-        var len;
-
-        if (this.x !== 0 || this.y !== 0) {
-            len = this.length();
-            return new Vector(this.x / len, this.y / len);
-        }
-
-        return new Vector(0.1, 0.1);
-    }
-};
 
 });
