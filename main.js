@@ -1,4 +1,6 @@
-﻿jQuery(function($) {
+﻿; "use strict";
+
+jQuery(function($) {
 
 var mouseX = 0;
 var mouseY = 0;
@@ -10,15 +12,17 @@ var airResistance = 0.01;
 var bounceResistance = 0.5;
 var friction = 0.2;
 var boxSize = 10;
-var springLength = 100;
 var tempBoxSize = boxSize;
-
-var gravityActivated = true;
-var springDrawingActivated = true;
-var pointDrawingActivated = true;
-var fixedPointCreationActivated = false;
 var draggedExists = false;
-var paused = false;
+
+var options = {
+  gravityActivated: true,
+  springDrawingActivated: true,
+  pointDrawingActivated: true,
+  fixedPointCreationActivated: false,
+  paused: false,
+  springLength: 100
+};
 
 var middleMouseDown = false;
 var shiftDown = false;
@@ -33,23 +37,35 @@ var ctx = $('#myCanvas')[0].getContext('2d');
 ctx.lineWidth = 1;
 ctx.strokeStyle = 'black';
 
-$.fn.ableness = function(f) { return this.text(f ? "enabled" : "disabled"); };
+$('body').on('update', '.setting', function() {
+  var
+    $element = $(this)
+  , option = this.id || $element.data('option')
+  , on = $element.data('on') || 'enabled'
+  , off = $element.data('off') || 'disabled'
+  ;
+
+  if (typeof options[option] === 'boolean')
+    $element.text(options[option] ? on : off);
+  else
+    $element.text(options[option]);
+});
+
+$('.setting').trigger('update');
 
 // Interactions for changing the simulation settings
 var keyActions = {
   // space bar
   "32": function() {
-      gravityActivated = !gravityActivated;
-      $('#GravityOn').ableness(gravityActivated);
+      options.gravityActivated = !options.gravityActivated;
     },
   // "s"
   "83": function() {
-      springDrawingActivated = !springDrawingActivated;
-      $('#SpringDrawingOn').ableness(springDrawingActivated);
+      options.springDrawingActivated = !options.springDrawingActivated;
     },
   // "p"
   "80": function() {
-        if (pointDrawingActivated) {
+        if (options.pointDrawingActivated) {
 
             tempBoxSize = boxSize;
             boxSize = 1;
@@ -57,8 +73,7 @@ var keyActions = {
         else {
             boxSize = tempBoxSize;
         }
-        pointDrawingActivated = !pointDrawingActivated;
-        $('#PointDrawingOn').ableness(pointDrawingActivated);
+        options.pointDrawingActivated = !options.pointDrawingActivated;
       },
   // delete
   "46": function() {
@@ -67,23 +82,19 @@ var keyActions = {
       },
   // "f"
   "70": function() {
-      fixedPointCreationActivated = !fixedPointCreationActivated;
-      $('#FixedPointCreation').ableness(fixedPointCreationActivated);
+      options.fixedPointCreationActivated = !options.fixedPointCreationActivated;
     },
   // "u"
   "85": function() {
-      paused = !paused;
-      $('#Paused').text(paused ? "paused" : "unpaused");
+      options.paused = !options.paused;
     },
   // "+"
   "187": function() {
-      springLength += 10;
-      $('#SpringSize').text(springLength);
+      options.springLength += 10;
     },
   // "-"
   "189": function() {
-      springLength = Math.max(10, springLength - 10);
-      $('#SpringSize').text(springLength);
+      options.springLength = Math.max(10, options.springLength - 10);
     },
   // shift
   "16": function() { shiftDown = true; }
@@ -91,8 +102,10 @@ var keyActions = {
 
 // Set up the event handlers
 $('#body').keydown(function (evt) {
-  if (keyActions[evt.which])
+  if (keyActions[evt.which]) {
     keyActions[evt.which]();
+    $('.setting').trigger('update');
+  }
 });
 
 $('body').keyup(function(evt) {
@@ -157,7 +170,7 @@ function setUpCanvas() {
 
 // Updates the scene.
 function update() {
-    if (!paused) {
+    if (!options.paused) {
         for (var i = 0; i < points.length; i++) {
             points[i].update();
         }
@@ -221,7 +234,7 @@ function dragPoints() {
 // Creates a mass point with the mouse position.
 function createPoint() {
     var newPoint = new MassPoint(mouseX, mouseY);
-    if (fixedPointCreationActivated) {
+    if (options.fixedPointCreationActivated) {
         newPoint.isFixed = true;
     }
     points.push(newPoint);
@@ -283,14 +296,14 @@ Spring.prototype = {
     update: function () {
         var distanceVector = this.second.position.subtract(this.first.position);
         var distance = distanceVector.length();
-        var adjustedDistance = distance - springLength;
+        var adjustedDistance = distance - options.springLength;
         var velocity = distanceVector.normalize().multiply(1 / 100).multiply(adjustedDistance);
         this.first.velocity = this.first.velocity.add(velocity);
         this.second.velocity = this.second.velocity.subtract(velocity);
     },
     // draws the spring.
     draw: function (ctx) {
-        if (springDrawingActivated) {
+        if (options.springDrawingActivated) {
             ctx.beginPath();
             ctx.moveTo(this.first.position.x, this.first.position.y);
             ctx.lineTo(this.second.position.x, this.second.position.y);
@@ -313,7 +326,7 @@ MassPoint.prototype = {
     // updates the masspoint - moves it and changes the velocity.
     update: function () {
         if (!this.isFixed) {
-            if (gravityActivated) {
+            if (options.gravityActivated) {
                 this.velocity = this.velocity.add(new Vector(0, gravity));
             }
             this.lastPosition = this.position.copy();
@@ -325,7 +338,7 @@ MassPoint.prototype = {
     },
     // draws the masspoint.
     draw: function (ctx) {
-        if (pointDrawingActivated) {
+        if (options.pointDrawingActivated) {
             if (this.isSelected) {
                 ctx.fillStyle = 'green';
             }
