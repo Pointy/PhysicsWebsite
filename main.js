@@ -30,6 +30,8 @@ var points = [];
 var springs = [];
 
 var ctx = $('#myCanvas')[0].getContext('2d');
+ctx.lineWidth = 1;
+ctx.strokeStyle = 'black';
 
 $.fn.ableness = function(f) { return this.text(f ? "enabled" : "disabled"); };
 
@@ -289,8 +291,6 @@ Spring.prototype = {
     // draws the spring.
     draw: function (ctx) {
         if (springDrawingActivated) {
-            ctx.lineWidth = 1;
-            ctx.strokeStyle = 'black';
             ctx.beginPath();
             ctx.moveTo(this.first.position.x, this.first.position.y);
             ctx.lineTo(this.second.position.x, this.second.position.y);
