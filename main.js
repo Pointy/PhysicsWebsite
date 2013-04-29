@@ -178,16 +178,20 @@ function doFrame() {
 
 // Drags points using the middle mouse button or shift click.
 function dragPoints() {
-    for (var i = 0; i < points.length; i++) {
-        if (middleMouseDown || (shiftDown && leftMouseDown)) {
-            if (new Vector(mouseX, mouseY).subtract(points[i].position).shorterThan(20)) {
+    var i, curpos;
+
+    if (middleMouseDown || (shiftDown && leftMouseDown)) {
+        curpos = new Vector(mouseX, mouseY);
+
+        for (i = 0; i < points.length; i++) {
+            if (curpos.subtract(points[i].position).shorterThan(20)) {
                 if (!points[i].isDragged && !draggedExists) {
                     points[i].isDragged = true;
                     draggedExists = true;
                 }
                 if (points[i].isDragged) {
                     points[i].lastPosition = points[i].position.copy();
-                    points[i].position = new Vector(mouseX, mouseY);
+                    points[i].position = curpos;
                     points[i].velocity = new Vector(0, 0);
                 }
 
@@ -195,7 +199,7 @@ function dragPoints() {
             else {
                 if (points[i].isDragged) {
                     points[i].lastPosition = points[i].position.copy();
-                    points[i].position = new Vector(mouseX, mouseY);
+                    points[i].position = curpos;
                     points[i].velocity = new Vector(0, 0);
                 }
                 else {
@@ -203,7 +207,9 @@ function dragPoints() {
                 }
             }
         }
-        else {
+    }
+    else {
+        for (i = 0; i < points.length; i++) {
             points[i].isDragged = false;
             draggedExists = false;
         }
@@ -221,17 +227,18 @@ function createPoint() {
 
 // Selects points that are next to the mouse cursor when you right click.
 function selectPoints() {
+    var curpos = new Vector(mouseX, mouseY);
     for (var i = 0; i < points.length; i++) {
-        if (new Vector(mouseX, mouseY).subtract(points[i].position).shorterThan(20)) {
+        if (curpos.subtract(points[i].position).shorterThan(20)) {
             points[i].isSelected = true;
         }
     }
 }
 
 // checks whether or not the spring exists.
-function springExists(otherSpring) {
+function springExists(x, y) {
     for (var i = 0; i < springs.length; i++) {
-        if (springs[i].equals(otherSpring)) {
+        if (springs[i].equals(x, y)) {
             return true;
         }
     }
@@ -245,9 +252,8 @@ function connectPoints() {
         for (var j = i + 1; j < points.length; j++) {
             if (points[i].isSelected && points[j].isSelected) {
                 atLeastTwoSelected = true;
-                var newSpring = new Spring(points[i], points[j]);
-                if (!springExists(newSpring)) {
-                    springs.push(newSpring);
+                if (!springExists(points[i], points[j])) {
+                    springs.push(new Spring(points[i], points[j]));
                 }
             }
         }
@@ -268,8 +274,8 @@ function Spring(firstPoint, secondPoint) {
 
 Spring.prototype = {
     // checks if the spring is equal to another.
-    equals: function (spring) {
-        return (this.first === spring.first && this.second === spring.second);
+    equals: function (x, y) {
+        return (this.first === x && this.second === y) || (this.first === y && this.second === x);
     },
     // updates the spring, attracting the two affected points.
     update: function () {
